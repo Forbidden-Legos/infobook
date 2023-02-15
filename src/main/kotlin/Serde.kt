@@ -27,6 +27,22 @@ val defaultText = """
     This is page 2
     ||obfuscated||
     Two line breaks signify a new page
+    Go to the next page to see all different types of markdown we support
+    [Page 3](page:3)
+
+    *italic*
+    **bold**
+    __underline__
+    ~~strikethrough~~
+    ||obfuscated||
+    [link](https://google.com/)
+    [page](page:1)
+    [book](book:root)
+    [command](comm:kill @s)
+    <color ff0000>color</color>
+    <c 00ff00>color but short</c>
+    <formatting 3l>formatting</formatting>
+    <f 4>formatting but short</f>
 """.trimIndent()
 
 var config: Config = Config("root", false, arrayListOf())

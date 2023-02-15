@@ -9,6 +9,8 @@ import de.olivermakesco.infobook.markdown.XmlRule
 import dev.proxyfox.markt.*
 import eu.pb4.sgui.api.elements.BookElementBuilder
 import eu.pb4.sgui.api.gui.BookGui
+import kotlinx.coroutines.*
+import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.text.*
@@ -104,21 +106,36 @@ fun getPath(path: String = "root"): Path {
     return QuiltLoader.getConfigDir().resolve("infobook").resolve("$path.md")
 }
 
+val books = HashMap<PlayerEntity, InfoBookGui>()
+
+class InfoBookGui(player: ServerPlayerEntity, builder: BookElementBuilder.() -> Unit) : BookGui(player, BookElementBuilder().apply(builder)) {
+}
+
+@OptIn(DelicateCoroutinesApi::class)
 fun open(player: ServerPlayerEntity, path: String = "") {
     val bookPath = getPath(path)
     if (!bookPath.exists()) {
         player.sendMessage(Text.of("Info book not found."), false)
+        return
     }
     val text = bookPath.readText().split("\n\n")
-    player.closeHandledScreen()
-    book(player) {
-        for (line in text) {
-            +line.split("\n").markdownLines
+    val book = books[player]
+    if (books[player]?.isOpen == true) {
+        book!!.close()
+    }
+    GlobalScope.launch {
+        withContext(Dispatchers.IO) {
+            Thread.sleep(100)
+            val newBook = InfoBookGui(player) {
+                for (line in text) {
+                    +line.split("\n").markdownLines
+                }
+            }
+            newBook.open()
+            books[player] = newBook
         }
-    }.open()
+    }
 }
-
-fun book(player: ServerPlayerEntity, builder: BookElementBuilder.() -> Unit) = BookGui(player, BookElementBuilder().apply(builder))
 
 context(BookElementBuilder)
 operator fun Text.unaryPlus() = addPage(this)
