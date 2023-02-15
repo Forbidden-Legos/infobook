@@ -203,5 +203,5 @@ fun MarkdownNode.text(): Text {
         }
     }
 
-    return Text.empty()
+    return Text.of(toString())
 }
