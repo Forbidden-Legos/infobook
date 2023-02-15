@@ -5,10 +5,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
 	java
-	`maven-publish`
 
 	alias(libs.plugins.kotlin)
 	alias(libs.plugins.quilt.loom)
+	alias(libs.plugins.serialization)
 }
 
 val archives_base_name: String by project
@@ -16,16 +16,13 @@ base.archivesName.set(archives_base_name)
 
 val javaVersion = 17
 
+val shade = configurations.create("shade")
+
 repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
+	maven("https://maven.proxyfox.dev")
+	maven("https://maven.nucleoid.xyz")
 }
 
-// All the dependencies are declared at gradle/libs.version.toml and referenced with "libs.<id>"
-// See https://docs.gradle.org/current/userguide/platforms.html for information on how version catalogs work.
 dependencies {
 	minecraft(libs.minecraft)
 	mappings(
@@ -34,25 +31,13 @@ dependencies {
 		}
 	)
 
-	// Replace the above line with the block below if you want to use Mojang mappings as your primary mappings, falling back on QM for parameters and Javadocs
-	/*
-	mappings(
-		loom.layered {
-			mappings(variantOf(libs.quilt.mappings) { classifier("intermediary-v2") })
-			officialMojangMappings()
-		}
-	)
-	*/
-
-	modImplementation(libs.quilt.loader)
-
-
-	// QSL is not a complete API; You will need Quilted Fabric API to fill in the gaps.
-	// Quilted Fabric API will automatically pull in the correct QSL version.
-	modImplementation(libs.qfapi)
-	// modImplementation(libs.bundles.qfapi) // If you wish to use the deprecated Fabric API modules
-
-	modImplementation(libs.qkl)
+	modImplementation(libs.bundles.quilt)
+	modImplementation(libs.bundles.include)
+	include(libs.bundles.include)
+	implementation(libs.bundles.external)
+	shade(libs.bundles.external) {
+		exclude(group="org.jetbrains.kotlin")
+	}
 }
 
 tasks {
@@ -62,6 +47,7 @@ tasks {
 			// languageVersion: A.B of the kotlin plugin version A.B.C
 			languageVersion = libs.plugins.kotlin.get().version.requiredVersion.substringBeforeLast('.')
 		}
+		compilerOptions.freeCompilerArgs.add("-Xcontext-receivers")
 	}
 
 	withType<JavaCompile>.configureEach {
@@ -80,6 +66,13 @@ tasks {
 					"version" to project.version
 				)
 			)
+		}
+
+		shade.forEach {
+			val tree = zipTree(it)
+			from(tree) {
+				duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+			}
 		}
 	}
 
@@ -121,21 +114,4 @@ java {
 	// Still required by IDEs such as Eclipse and VSC
 	sourceCompatibility = targetJavaVersion
 	targetCompatibility = targetJavaVersion
-}
-
-// Configure the maven publication
-publishing {
-	publications {
-		register<MavenPublication>("Maven") {
-			from(components.getByName("java"))
-		}
-	}
-
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
-	}
 }
