@@ -4,6 +4,7 @@ import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
+import de.olivermakesco.infobook.markdown.EmptyXmlNode
 import de.olivermakesco.infobook.markdown.XmlNode
 import de.olivermakesco.infobook.markdown.XmlRule
 import dev.proxyfox.markt.*
@@ -45,6 +46,7 @@ object InfobookMod : ModInitializer {
             +XmlRule("c")
             +XmlRule("formatting")
             +XmlRule("f")
+            +XmlRule("br")
         }
 
         CommandRegistrationCallback.EVENT.register { dispatcher, _, _ ->
@@ -218,6 +220,9 @@ fun MarkdownNode.text(): Text {
             }
             return text
         }
+    }
+    if (this is EmptyXmlNode && key == "br") {
+        return Text.empty()
     }
 
     return Text.of(toString())

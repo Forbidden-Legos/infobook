@@ -35,6 +35,7 @@ val defaultText = """
     __underline__
     ~~strikethrough~~
     ||obfuscated||
+    <br/>
     [link](https://google.com/)
     [page](page:1)
     [book](book:root)
@@ -71,14 +72,6 @@ fun loadConfig() {
         return
     }
     config = json.decodeFromString(path.readText())
-    val root = getPath()
-    if (!root.exists()) {
-        try {
-            QuiltLoader.getConfigDir().resolve("infobook").createDirectory()
-        } catch(_: Throwable) {}
-        root.createFile()
-        root.writeText(defaultText)
-    }
 }
 
 fun saveConfig() {
