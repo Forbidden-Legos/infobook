@@ -6,10 +6,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.quiltmc.loader.api.QuiltLoader
-import kotlin.io.path.createFile
-import kotlin.io.path.exists
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
+import java.nio.charset.Charset
+import java.nio.file.OpenOption
+import java.nio.file.StandardOpenOption
+import kotlin.io.path.*
 
 @JvmRecord
 @Serializable
@@ -60,9 +60,11 @@ val json = Json {
 fun loadConfig() {
     if (!path.exists()) {
         config = Config("root", false, arrayListOf())
-        path.createFile()
         val root = getPath()
         if (!root.exists()) {
+            try {
+                QuiltLoader.getConfigDir().resolve("infobook").createDirectory()
+            } catch(_: Throwable) {}
             root.createFile()
             root.writeText(defaultText)
         }
@@ -71,14 +73,14 @@ fun loadConfig() {
     config = json.decodeFromString(path.readText())
     val root = getPath()
     if (!root.exists()) {
+        try {
+            QuiltLoader.getConfigDir().resolve("infobook").createDirectory()
+        } catch(_: Throwable) {}
         root.createFile()
         root.writeText(defaultText)
     }
 }
 
 fun saveConfig() {
-    if (!path.exists()) {
-        path.createFile()
-    }
     path.writeText(json.encodeToString(config))
 }
